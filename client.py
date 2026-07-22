@@ -1,5 +1,6 @@
 import socket
 import threading
+from prompt_toolkit import print_formatted_text, HTML, prompt
 
 SERVER_ADDRESS = ('localhost', 5001)
 
@@ -10,7 +11,7 @@ client_socket.connect(SERVER_ADDRESS)
 def send_loop():
     while True:
         try:
-            message = input('Enter your message: ')
+            message = prompt("You: ")
             client_socket.send(message.encode('utf-8'))
         except (OSError, KeyboardInterrupt):
             break
@@ -23,7 +24,7 @@ def recv_loop():
             if not message:
                 print('\nServer closed the connection.')
                 break
-            print('\n' + message.decode('utf-8'))
+            print_formatted_text(HTML(f"<violet>{message.decode('utf-8')}</violet>"))
         except OSError:
             break
 

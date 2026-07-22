@@ -1,6 +1,6 @@
 import asyncio
 import socket
-from typing import List
+from typing import Dict
 
 SERVER_ADDRESS = ('localhost', 5001)
 
@@ -13,7 +13,7 @@ server_socket.setblocking(False)
 
 queue = asyncio.Queue()
 
-receiving_tasks: dict[socket.socket, asyncio.Task] = {}
+receiving_tasks: Dict[socket.socket, asyncio.Task] = {}
 
 
 async def handle_recv(client_socket, loop):
@@ -53,6 +53,9 @@ async def main():
             print('Client disconnected')
             continue
         except KeyboardInterrupt:
+            break
+        except Exception as e:
+            print(e)
             break
 
 
