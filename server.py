@@ -18,16 +18,16 @@ client_sockets: List[socket.socket] = []
 
 async def handle_recv(client_socket, loop):
     while True:
-        message = await loop.sock_recv(client_socket, 1024)
-        if message:
+        if client_sockets:
+            message = await loop.sock_recv(client_socket, 1024)
             print(message)
-            await queue.put(message)
+            await queue.put((client_socket, message))
 
 
 async def broadcast():
     while True:
-        message = await queue.get()
-        for client_socket in client_sockets:
+        current_socket, message = await queue.get()
+        for client_socket in filter(lambda x: x != current_socket, client_sockets):
             client_socket.send(message)
         queue.task_done()
 
