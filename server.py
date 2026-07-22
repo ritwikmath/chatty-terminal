@@ -13,21 +13,19 @@ server_socket.setblocking(False)
 
 queue = asyncio.Queue()
 
-client_sockets: List[socket.socket] = []
 receiving_tasks: dict[socket.socket, asyncio.Task] = {}
 
 
 async def handle_recv(client_socket, loop):
     try:
         while True:
-            if client_sockets:
+            if receiving_tasks.keys():
                 message = await loop.sock_recv(client_socket, 1024)
                 if not message:
                     break
                 print(message)
                 await queue.put((client_socket, message))
     finally:
-        client_sockets.remove(client_socket)
         task = receiving_tasks.get(client_socket)
         task.cancel()
         receiving_tasks.pop(client_socket)
@@ -38,7 +36,7 @@ async def handle_recv(client_socket, loop):
 async def broadcast():
     while True:
         current_socket, message = await queue.get()
-        for client_socket in filter(lambda x: x != current_socket, client_sockets):
+        for client_socket in filter(lambda x: x != current_socket, receiving_tasks.keys()):
             client_socket.send(message)
         queue.task_done()
 
@@ -48,7 +46,6 @@ async def main():
     while True:
         try:
             client_socket, _ = await loop.sock_accept(server_socket)
-            client_sockets.append(client_socket)
             task = asyncio.create_task(handle_recv(client_socket, loop))
             receiving_tasks[client_socket] = task
             asyncio.create_task(broadcast())
