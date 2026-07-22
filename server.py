@@ -14,14 +14,25 @@ server_socket.setblocking(False)
 queue = asyncio.Queue()
 
 client_sockets: List[socket.socket] = []
+receiving_tasks: dict[socket.socket, asyncio.Task] = {}
 
 
 async def handle_recv(client_socket, loop):
-    while True:
-        if client_sockets:
-            message = await loop.sock_recv(client_socket, 1024)
-            print(message)
-            await queue.put((client_socket, message))
+    try:
+        while True:
+            if client_sockets:
+                message = await loop.sock_recv(client_socket, 1024)
+                if not message:
+                    break
+                print(message)
+                await queue.put((client_socket, message))
+    finally:
+        client_sockets.remove(client_socket)
+        task = receiving_tasks.get(client_socket)
+        task.cancel()
+        receiving_tasks.pop(client_socket)
+        client_socket.close()
+
 
 
 async def broadcast():
@@ -38,7 +49,8 @@ async def main():
         try:
             client_socket, _ = await loop.sock_accept(server_socket)
             client_sockets.append(client_socket)
-            asyncio.create_task(handle_recv(client_socket, loop))
+            task = asyncio.create_task(handle_recv(client_socket, loop))
+            receiving_tasks[client_socket] = task
             asyncio.create_task(broadcast())
         except socket.error:
             print('Client disconnected')
