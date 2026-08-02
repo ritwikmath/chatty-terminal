@@ -18,8 +18,6 @@ def send_loop():
             client_socket.send(f"{USERNAME}: {message}".encode('utf-8'))
         except (OSError, KeyboardInterrupt):
             break
-        finally:
-            client_socket.send(f"{USERNAME} left the chat".encode('utf-8'))
 
 
 def recv_loop():
@@ -41,10 +39,12 @@ if __name__ == '__main__':
         sys.exit()
     recv_thread = threading.Thread(target=recv_loop, daemon=True)
     send_thread = threading.Thread(target=send_loop, daemon=True)
+    client_socket.send(f"{USERNAME} joined the chat.".encode("utf-8"))
 
     recv_thread.start()
     send_thread.start()
 
     send_thread.join()  # main thread waits here until send_loop exits (e.g. Ctrl+C or error)
+    client_socket.send(f"{USERNAME} left the chat".encode('utf-8'))
 
     client_socket.close()
