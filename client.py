@@ -3,6 +3,7 @@ import threading
 import sys
 from prompt_toolkit import print_formatted_text, HTML, PromptSession
 from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.shortcuts import yes_no_dialog
 
 SERVER_ADDRESS = ('localhost', 5001)
 
@@ -20,7 +21,11 @@ def send_loop():
         try:
             message = session.prompt("You: ")
             if message.lower().strip() == "/quit":
-                break
+                result = yes_no_dialog(
+                    text="Do you want to quit?"
+                ).run()
+                if result:
+                    break
             client_socket.send(f"{USERNAME}: {message}".encode('utf-8'))
         except (OSError, KeyboardInterrupt):
             break
