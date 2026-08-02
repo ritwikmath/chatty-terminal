@@ -1,5 +1,6 @@
 import socket
 import threading
+import sys
 from prompt_toolkit import print_formatted_text, HTML, prompt
 
 SERVER_ADDRESS = ('localhost', 5001)
@@ -7,12 +8,14 @@ SERVER_ADDRESS = ('localhost', 5001)
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect(SERVER_ADDRESS)
 
+USERNAME = ""
+
 
 def send_loop():
     while True:
         try:
             message = prompt("You: ")
-            client_socket.send(message.encode('utf-8'))
+            client_socket.send(f"{USERNAME}: {message}".encode('utf-8'))
         except (OSError, KeyboardInterrupt):
             break
 
@@ -30,6 +33,10 @@ def recv_loop():
 
 
 if __name__ == '__main__':
+    USERNAME = input("Your username?")
+    if not USERNAME:
+        print("Your username must not be empty.")
+        sys.exit()
     recv_thread = threading.Thread(target=recv_loop, daemon=True)
     send_thread = threading.Thread(target=send_loop, daemon=True)
 
