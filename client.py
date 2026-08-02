@@ -18,6 +18,8 @@ def send_loop():
             client_socket.send(f"{USERNAME}: {message}".encode('utf-8'))
         except (OSError, KeyboardInterrupt):
             break
+        finally:
+            client_socket.send(f"{USERNAME} left the chat".encode('utf-8'))
 
 
 def recv_loop():
