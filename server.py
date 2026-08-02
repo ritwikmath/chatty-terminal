@@ -1,6 +1,5 @@
 import asyncio
 import socket
-from typing import Dict
 
 SERVER_ADDRESS = ('localhost', 5001)
 
@@ -14,7 +13,7 @@ server_socket.setblocking(False)
 
 queue = asyncio.Queue()
 
-receiving_tasks: Dict[socket.socket, asyncio.Task] = {}
+receiving_tasks: dict[socket.socket, asyncio.Task] = {}
 
 
 async def handle_recv(client_socket, loop):
@@ -34,23 +33,23 @@ async def handle_recv(client_socket, loop):
 
 
 
-async def broadcast():
+async def broadcast(loop):
     while True:
         current_socket, message = await queue.get()
         for client_socket in filter(lambda x: x != current_socket, receiving_tasks.keys()):
-            client_socket.send(message)
+            await loop.sock_sendall(client_socket, message)
         queue.task_done()
 
 
 async def main():
     loop = asyncio.get_running_loop()
+    background_task = asyncio.create_task(broadcast(loop))
     while True:
         try:
             client_socket, _ = await loop.sock_accept(server_socket)
             task = asyncio.create_task(handle_recv(client_socket, loop))
             receiving_tasks[client_socket] = task
-            asyncio.create_task(broadcast())
-        except socket.error:
+        except OSError:
             print('Client disconnected')
             continue
         except KeyboardInterrupt:
@@ -58,6 +57,7 @@ async def main():
         except Exception as e:
             print(e)
             break
+    background_task.cancel()
 
 
 if __name__ == '__main__':
