@@ -1,7 +1,8 @@
 import socket
 import threading
 import sys
-from prompt_toolkit import print_formatted_text, HTML, prompt
+from prompt_toolkit import print_formatted_text, HTML, PromptSession
+from prompt_toolkit.completion import WordCompleter
 
 SERVER_ADDRESS = ('localhost', 5001)
 
@@ -10,11 +11,14 @@ client_socket.connect(SERVER_ADDRESS)
 
 USERNAME = ""
 
+option_completer = WordCompleter(["/quit"], sentence=True)
+session = PromptSession(completer=option_completer)
+
 
 def send_loop():
     while True:
         try:
-            message = prompt("You: ")
+            message = session.prompt("You: ")
             if message.lower().strip() == "/quit":
                 break
             client_socket.send(f"{USERNAME}: {message}".encode('utf-8'))
