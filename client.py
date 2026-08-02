@@ -15,6 +15,8 @@ def send_loop():
     while True:
         try:
             message = prompt("You: ")
+            if message.lower().strip() == "/quit":
+                break
             client_socket.send(f"{USERNAME}: {message}".encode('utf-8'))
         except (OSError, KeyboardInterrupt):
             break
